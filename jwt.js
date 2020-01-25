@@ -188,7 +188,7 @@ function fastifyJwt(fastify, options, next) {
     );
   }
 
-  function requestVerify(token = null, options, next) {
+  function requestVerify(token = "", options, next) {
     if (typeof options === "function" && !next) {
       next = options;
       options = Object.assign({}, verifyOptions);
@@ -202,23 +202,24 @@ function fastifyJwt(fastify, options, next) {
 
     if (next === undefined) {
       return new Promise(function(resolve, reject) {
-        request.jwtVerify(options, function(err, val) {
+        request.jwtVerify(token, options, function(err, val) {
           err ? reject(err) : resolve(val);
         });
       });
     }
 
-    if (token === null && request.headers && request.headers.authorization) {
-      const parts = request.headers.authorization.split(" ");
+    if (token) {
+      let parts =
+        request.headers && request.headers.authorization
+          ? request.headers.authorization.split(" ")
+          : "";
       if (parts.length === 2) {
         const scheme = parts[0];
         token = parts[1];
 
-        if (!/^Bearer$/i.test(scheme)) {
+        if (!token && !/^Bearer$/i.test(scheme)) {
           return next(new BadRequest(messagesOptions.badRequestErrorMessage));
         }
-      } else {
-        return next(new BadRequest(messagesOptions.badRequestErrorMessage));
       }
     } else {
       return next(
